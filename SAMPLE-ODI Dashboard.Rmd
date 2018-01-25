@@ -1,0 +1,143 @@
+---
+title: "Sample ODI Dashboard by Sarthak Verma"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(readxl)
+ODI = read_excel("odi-batting-analysis.xlsx")
+```
+
+Select the country {.sidebar}
+=======================================================================
+
+```{r}
+selectInput(inputId = "Country", label = "Select the Country", choices = as.character(unique(ODI$Country)))
+selectInput(inputId = "opponent", label = "Select the opponent", choices = c("All", as.character(unique(ODI$Versus))), selected = "All")
+```
+
+Summary and Top 10 Batsman 
+=======================================================================
+Row
+-----------------------------------------------------------------------
+
+### Total Number of Matches
+
+```{r}
+renderValueBox({
+  #data = filter(ODI, Country == input$Country & Versus == input$opponent) 
+  
+  data <- {
+  if (input$opponent == 'All') {
+    data1 <- filter(ODI, Country == input$Country)
+  } else {
+    data1 <- filter(ODI, Country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+  M = data %>% summarise(Number.Of.Matches = n_distinct(MatchDate)) 
+   valueBox(M, icon = "fa-flag", color = "Green")
+})
+```
+
+### Total Runs
+
+```{r}
+
+renderValueBox({
+  #data = filter(ODI, Country == input$Country & Versus == input$opponent)  
+  
+  data <- {
+  if (input$opponent == 'All') {
+    data1 <- filter(ODI, Country == input$Country)
+  } else {
+    data1 <- filter(ODI, Country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+  
+  R = data %>% summarise(Total.Runs = sum(Runs, na.rm = TRUE)) 
+   valueBox(R, icon = "fa-flag", color = "Red")
+})
+```
+
+### Average Score Rate
+
+```{r}
+
+renderValueBox({
+  #data = filter(ODI, Country == input$Country & Versus == input$opponent)  
+  
+  data <- {
+  if (input$opponent == 'All') {
+    data1 <- filter(ODI, Country == input$Country)
+  } else {
+    data1 <- filter(ODI, Country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+  
+  SCR = data %>% summarise(Average.Score.Rate = mean(ScoreRate, na.rm = TRUE))
+   New_SCR = round(SCR,1)
+   valueBox(New_SCR, icon = "fa-flag", color = ifelse(New_SCR < 50, "warning","primary"))
+})
+```
+
+Row
+---------------------------------------------------------
+### Top 10 Batsman
+
+```{r, fig.height= 10}
+
+renderPlot({
+  #data = filter(ODI, Country == input$Country & Versus == input$opponent)
+  
+  data <- {
+  if (input$opponent == 'All') {
+    data1 <- filter(ODI, Country == input$Country)
+  } else {
+    data1 <- filter(ODI, Country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+  
+  top_player = data %>% group_by(Player) %>% summarise(Total.Runs = sum(Runs)) %>% arrange(desc(Total.Runs))
+  final.data = head(top_player,10)
+  ggplot(final.data, aes(x = reorder(Player, -Total.Runs), y = Total.Runs)) + 
+           geom_bar(stat = "Identity", width = .5, fill = "#4CA64C") + theme_bw() + geom_text(aes(label = Total.Runs), position = position_dodge(width = .9), vjust = -0.25) + theme(axis.text.x = element_text(angle = 90)) + labs(y="Runs", x=" ", caption = "Data Source: data.world") + theme(axis.text.y = element_blank(), axis.ticks.y =element_blank())
+})
+```
+
+Data Table
+=======================================================================
+
+Column
+-----------------------------------------------------------
+### Perfomance against opponent
+
+```{r}
+DT::renderDataTable({
+  #data = filter(ODI, Country == input$Country & Versus == input$opponent) 
+  
+  data <- {
+  if (input$opponent == 'All') {
+    data1 <- filter(ODI, Country == input$Country)
+  } else {
+    data1 <- filter(ODI, Country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+  
+  d = data %>% group_by(Versus) %>% summarise(Number.of.Match = n_distinct(MatchDate), Total.Runs = sum(Runs),                         Average.Score.Rate = round(mean(ScoreRate),1))
+ DT::datatable(d, options = list(pageLength = 5, lengthMenu = c(5, 10, 15, 20)))
+})
+```
+
