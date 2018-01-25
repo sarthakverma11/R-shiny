@@ -1,0 +1,143 @@
+---
+title: "ODI dataset dashboard with Sarthak"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: row
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(DT)
+data=read.csv('C://Users//Administrator//Desktop//Datasets//odi-batting.csv')
+odi=data[,1:7]
+
+```
+
+column {.sidebar}
+=================================================================
+
+```{r}
+selectInput(inputId = "Country",label = "choose country",choices = as.character(unique(odi$Country)))
+
+selectInput(inputId = "Opponent",label = "Choose Opponent",choices = c("All",as.character(unique(odi$Versus))),selected = "All")
+
+```
+
+
+Summary and Top 10 batsman
+=======================================================
+
+Row
+-----------------------------------------------
+
+### Total Number Of Matches
+```{r}
+renderPlot()
+library(DT)
+renderDataTable({
+  data={
+    if(input$Class2=="All"){
+    data1=filter(odi,odi$Country==input$Class1)}
+    else{
+    data1=filter(odi,odi$Country==input$Class1 & odi$Versus==input$Class2)
+    }
+    data1
+    }  
+  d = data %>% group_by(Versus) %>% summarise(No.of.Matches = n_distinct(MatchDate),Total.Runs = sum(Runs),Avg.Score = mean(ScoreRate))
+  datatable(d,options = list(pageLength = 5, lengthMenu = c(5,10,15)))
+}) c 
+
+
+```
+
+### Total Runs
+```{r}
+renderValueBox({
+  data={
+    if(input$Class2=="All"){
+    data1=filter(odi,odi$Country==input$Class1)}
+    else{
+    data1=filter(odi,odi$Country==input$Class1 & odi$Versus==input$Class2)
+    }
+    data1
+  }  
+
+   total.runs.df= data%>%group_by(Player)%>%summarize(total_runs=sum(Runs,na.rm=T))
+   total.runs = sum(total.runs.df$total_runs)
+
+   valueBox((total.runs),icon='fa-car',color=ifelse(total.runs>50,'warning','primary'))
+   
+})
+```
+
+### Average score
+```{r}
+renderPlot({
+  data={
+    if(input$Class2=="All"){
+    data1=filter(odi,odi$Country==input$Class1)}
+    else{
+    data1=filter(odi,odi$Country==input$Class1 & odi$Versus==input$Class2)
+    }
+    data1
+    }  
+      
+ #data= filter(iris,iris$Species==input$Class)
+runs_data = data%>%group_by(Player)%>%summarize(total_runs=sum(Runs,na.rm=T))%>%arrange(-total_runs)%>%top_n(10)
+  ggplot(runs_data,aes(reorder(Player,-total_runs),total_runs))+geom_bar(stat='identity',color='black',fill='dark green')+theme_bw()
+})
+```
+
+Row
+---------------------------------------------------
+
+### Top 10 Batsman {data-height=2000}
+```{r}
+
+```
+
+
+ Data Table
+===============================================
+
+Row
+-----------------------------------
+
+### Performance against opponent
+
+```{r}
+data={
+  if (input$opponent == 'All')
+  {
+    data1 = filter(odi,Country == input$Country)
+  }
+  else
+  {
+    data1 = filter(odi,country == input$Country & Versus == input$opponent)
+  }
+  data1
+}
+
+d = data %>% group_by(Versus) %>% summarise(Number.of.Match = n_distinct(MatchDate), Total.Runs=sum(Runs),Avrage.Score.Rate = round(mean(ScoreRate),1))
+DT::datatable(d,options=list(pageLength = 5,lengthMenu = c(5,10,15,20)))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
