@@ -1,0 +1,73 @@
+---
+title: "Adding Shiny to flex dashboard"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+library(plotly)
+library(googleVis)
+data("iris")
+```
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+Select a class to see the scatter plot between Sepal Length and Sepal Width
+
+```{r}
+#selectInput(inputId = "Class", label = "Choose the Species", choices =  as.character(unique(iris$Species)))
+selectInput(inputId = "Class", label = "Choose the Species", choices =  c("All", as.character(unique(iris$Species))), selected = "All")
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Scatter plot between Petal Length and Petal Width
+```{r}
+#data = reactive({iris[iris$Species == input$Species,]})
+renderPlot({
+  data <- {
+  if (input$Class == 'All') {
+    data1 <- iris
+    
+  } else {
+    data1 <- filter(iris, iris$Species == input$Class)
+    
+  }
+  data1
+}
+  
+  #data = filter(iris, iris$Species == input$Class)
+  ggplot(data, aes(Petal.Length, Petal.Width)) + geom_point()
+})
+```
+
+### scatter plot between Sepal Length and Sepal Width
+```{r}
+#data = reactive({iris[iris$Species == input$Species,]})
+renderPlotly({
+  data1 <- {
+  if (input$Class == 'All') {
+    data2 <- iris
+  } else {
+    
+    data2 <- filter(iris, iris$Species == input$Class)
+    
+  }
+  data2
+}
+  #data = filter(iris, iris$Species == input$Class)
+  d = ggplot(data1, aes(Sepal.Length, Sepal.Width)) + geom_point()
+  #lot_ly(data1, x = ~Sepal.Length, y = ~Sepal.Width, color = ~Species)
+  ggplotly(d)
+})
+```
+
+
