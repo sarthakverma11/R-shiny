@@ -1,0 +1,56 @@
+---
+title: "Untitled"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: scroll
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(ggplot2)
+library(dplyr)
+data("iris")
+```
+
+Column1 {.sidebar}
+=============================================================================
+
+### Select the Species
+
+```{r}
+selectInput(inputId = "Class", label = "Select the Species", choices = unique(iris$Species))
+```
+
+Scatter Plot
+========================================================================
+
+Column
+-----------------------------------------------------------------------
+
+### Scatter Plot between Petal Length and Petal Width
+
+```{r}
+renderPlot({
+  
+  data1 = filter(iris, Species == input$Class)
+  
+  ggplot(data1, aes(Petal.Length, Petal.Width)) + geom_point()
+  
+})
+```
+
+Data Table
+===================================================================
+Column
+------------------------------------------------------------------
+### Chart C
+
+```{r}
+DT::renderDataTable({
+  data1 = filter(iris, Species == input$Class)
+  DT::datatable(data1, options = list(pageLength = 5))
+})
+```
+
